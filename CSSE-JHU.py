@@ -9,8 +9,8 @@ Created on Tue Mar 31 14:13:27 2020
 import pandas as pd
 import matplotlib.pyplot as plt
 
-export_path = '/home/setup/Documents/DevBarn/Covid-Analysis/export_graph.jpg'
-countries = ['Brazil','Canada','US','Italy','Spain']
+export_path = '/home/setup/Documents/DevBarn/Covid-Analysis/extra.jpg'
+countries = ['Brazil']
 
 def Get_CSSEJHU_Data():
     CSSEJHU_confirmed_global = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
@@ -27,7 +27,7 @@ def GroupBy_Sum(data,column):
 
 def EvolutionData(data,country):
     evolution = data[country][2:]
-    evolution = evolution[data[country]>0]
+    evolution = evolution[data[country]>100]
     evolution = evolution.reset_index()[country]
     
     return evolution
@@ -42,16 +42,20 @@ CSSEJHU_country.update({'recovered' : GroupBy_Sum(CSSEJHU['recovered'],'Country/
 
 
 country_data = []
+conf_data = []
 max_evolution = []
 for country in countries:
     evolution_country = EvolutionData(CSSEJHU_country['confirmed'], country)
+    est_country = EvolutionData(CSSEJHU_country['confirmed'], country)
     country_data.append(evolution_country)
+    conf_data.append(est_country)
     max_evolution.append(max(evolution_country.index))
     
 xlim = min(max_evolution)+1
 
 for i in range(len(country_data)):
     country_data[i] = country_data[i][:xlim]
+    conf_data[i] = conf_data[i][:xlim]
 
 
 # Accuracy
