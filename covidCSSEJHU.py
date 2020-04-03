@@ -49,38 +49,50 @@ def FindCoordinates(address):
     
     return location
 
-def CreateModelCSV():
-    bulk_data = pd.read_csv(br_cities_coord_path)
-    group_data = bulk_data.groupby('state')
-    coord_data = group_data.groups
+def CreateModelCSV(csv_save_path):
+    time_series_covid19_confirmed_BR = pd.read_csv(br_cities_coord_path)
+    
+    time_series_covid19_confirmed_BR['UID'] = 0
+    time_series_covid19_confirmed_BR['iso2'] = 'BR'
+    time_series_covid19_confirmed_BR['iso3'] = 'Brazil'
+    time_series_covid19_confirmed_BR['code3'] = 0
+    time_series_covid19_confirmed_BR['FIPS'] = 0
+    time_series_covid19_confirmed_BR['Country_Region'] = 'Brazil'
+    time_series_covid19_confirmed_BR['Combined_Key'] = time_series_covid19_confirmed_BR['Admin2']+', '+ time_series_covid19_confirmed_BR['Province_State']+', '+time_series_covid19_confirmed_BR['Country_Region']
+    
+    time_series_covid19_confirmed_BR = time_series_covid19_confirmed_BR['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Province_State','Country_Region', 'Lat', 'Long_', 'Combined_Key']
+    
+    time_series_covid19_confirmed_BR.to_csv(csv_save_path)
+# =============================================================================
+#     time_series_covid19_confirmed_BR = time_series_covid19_confirmed_BR.set_index(['Province_State','Admin2'])
+#     group_data = bulk_data.groupby('state')
+#     coord_data = group_data.groups
+# =============================================================================
     
     
 
 def main(url):
+    
+    
+    
+    try:
+        time_series_covid19_confirmed_BR = pd.read_csv(csv_save_path)
+    except:
+        CreateModelCSV(csv_save_path)
     
     driver = ColectData(url)
     
     xpath = "//div[@class='places__body']//div[@class='places__cell']"
     data = ExtractInfo(driver,'City',xpath)
     
-    data['UID'] = 0
-    data['iso2'] = 'BR'
-    data['iso3'] = 'Brazil'
-    data['code3'] = 0
-    data['FIPS'] = 0
-    
     new = data['City'].str.split(", ", n = 1, expand = True)
     data['Admin2'] = new[0].apply(lambda arg: unicodedata.normalize('NFKD', arg).encode('ASCII', 'ignore').decode("utf-8"))
     data['Province_State'] = new[1].replace(br_state)
-    
-    data['Country_Region'] = 'Brazil'
     
     data = data.dropna(subset=['Province_State'])
     
     location = FindCoordinates(pd.concat([data['Admin2'],data['Province_State']], axis=1))
     data['lat'],data['long'] = location['lat'],location['long']
-    
-    data['Combined_Key'] = data['Admin2']+', '+ data['Province_State']+', '+data['Country_Region']
     
     xpath = "//div[@class='places__body']//div[@class='places__cell places__cell--right']"
     current_day = datetime.datetime.now().strftime("%x")
